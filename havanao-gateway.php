@@ -52,7 +52,7 @@ function HavanaoGateWay() {
 					$this->gateway_url = 'https://api.havanao.com/api/sale/purchase';
 				}
 
-				$this->havanao_api_key      = $this->get_option( 'havanao_api_key' );
+				$this->havanao_api_key   = $this->get_option( 'havanao_api_key' );
 				$this->consumer_secret   = $this->get_option( 'consumer_secret' );
 				
 				$this->businessShortCode = $this->get_option( 'business_shortcode' );
@@ -121,7 +121,7 @@ function HavanaoGateWay() {
 						'label'   => __( 'Enable Test Mode', 'havanao' ),
 						'default' => 'no',
 					),
-					'consumer_key'       => array(
+					'havanao_api_key'       => array(
 						'title'       => __( 'Havanao API Key', 'havanao' ),
 						'type'        => 'text',
 						'description' => __( 'Havanao API Key required for authentication.' ),
@@ -167,21 +167,23 @@ function HavanaoGateWay() {
 				$timestamp    = date( 'Ymdhis' );
 
 				// Do transaction push to customer
-				$data = array(
-					'customer'          => $phone,
-					'callback_url'      => add_query_arg( 'order-id', $order_id, $this->callBackURL ),
-					'payment_reference' => $order_id,
-					'comment'           =>  __('Payment for order #') . $order_id,
-				);
+				$data = [
+					'customer'      => $phone,
+					'amount'        => (int) $order->get_total(),
+					'callback_url'  => add_query_arg( 'order-id', $order_id, $this->callBackURL ),
+					'transactionid' => $order_id,
+					'comment'       =>  __('Payment for order #') . $order_id,
+				];
 
 				// Add Authentication to the URL 
 				$this->gateway_url = $this->gateway_url.'?api_token=' . $this->havanao_api_key;
-				error_log($this->gateway_ur);
+		
+
 				$response = wp_remote_post(
 					$this->gateway_url, 
 					['body'    => json_encode( $data ),'timeout' => 45 ]
 				);
-				error_log(print_r($data));
+				$order->add_order_note(json_encode( $data ));
 				$order->add_order_note($this->gateway_url);
 				// Log request and response to havanao
 				if ( ! is_wp_error( $response ) ) {
