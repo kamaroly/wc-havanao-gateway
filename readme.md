@@ -1,5 +1,5 @@
 # HAVANAO WOOCOMMERCE PAYMENT GATEWAY
-This plugin helps you to accept MTN and AIRTEL Payments on your store using Havanao.com payment gateway.
+This plugin helps you to accept MTN and AIRTEL Payments on your woocommerce store using Havanao.com payment gateway.
 
 ## INSTALLATION 
 1) Download plugin [here](https://github.com/kamaroly/wc-havanao-gateway/archive/master.zip "Havanao WooCommerce Gateway")
