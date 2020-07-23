@@ -3,7 +3,7 @@
  * Plugin Name:     WooCommerce Havanao Payment Gateway
  * Plugin URI:      https://havanao.com
  * Description:     Handle payments to havanao, Lambert contributed to have this working in production.
- * Version:         1.0.0
+ * Version:         1.0.1
  * Author:          support@havanao.com
  * Author URI:      https://havanao.com
  * Text Domain:     havanao
@@ -170,9 +170,9 @@ function HavanaoGateWay() {
 				$data = [
 					'customer'      => $phone,
 					'amount'        => (int) $order->get_total(),
-					'callback_url'  => add_query_arg( 'order-id', $order_id, $this->callBackURL ),
 					'transactionid' => $order_id,
-					'comment'       =>  __('Payment for order #') . $order_id,
+					'comment'       =>  __('Payment for order number ') . $order_id,
+					'callback_url'  => add_query_arg( 'order-id', $order_id, $this->callBackURL ),
 				];
 
 				// Add Authentication to the URL 

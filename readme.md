@@ -8,3 +8,7 @@ This plugin helps you to accept MTN and AIRTEL Payments on your store using Hava
 4) Provide Havanao API key, that will be used to authenticate on Havanao during payment.
 
 You can set this plugin to testing if you are not in production.
+
+#### CHANGELOG
+1.0.1
+- Fixed MTN bug of `soap:ClientThe requested operation was rejected. Please consult with your administrator.Your support ID is: 13025149561602501851`
