@@ -8,6 +8,7 @@ This plugin helps you to accept MTN and AIRTEL Payments on your woocommerce stor
 4) Provide Havanao API key, that will be used to authenticate on Havanao during payment.
 
 You can set this plugin to testing if you are not in production.
+![image](https://user-images.githubusercontent.com/3633772/88485193-bb179280-cf7c-11ea-8ae8-ecbdc30977de.png)
 
 
 #### CHANGELOG
