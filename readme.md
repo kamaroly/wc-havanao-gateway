@@ -15,7 +15,8 @@ You can set this plugin to testing if you are not in production.
 ###### 1.0.2
 - Added below settings under `Woocommerce > Settings > Payments > Havanao` 
 	- Added success payment status configuration
-	- Added pending payment status configurations 
+	- Added pending payment status configuration
+	- Added Errored payment status configuration
 - Added Havanao Payment status call back handler
 - Removed Havanao Bill Number label
 - Removed Unnecessary Files in plugin.
