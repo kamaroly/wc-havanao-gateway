@@ -43,7 +43,7 @@ function HavanaoGateWay() {
 				$this->icon               = apply_filters( 'woocommerce_havanao_icon', '' );
 				$this->has_fields         = true;
 				$this->method_title       = __( 'Havanao Payments', 'havanao' );
-				$this->method_description = __( 'Please send havanao to PayBill Number 432793', 'havanao' );
+				$this->method_description = __( '', 'havanao' );
 
 				// Define havanao specific configuration
 				if ( 'yes' == $this->get_option( 'test_enabled' ) ) {
@@ -52,15 +52,14 @@ function HavanaoGateWay() {
 					$this->gateway_url = 'https://api.havanao.com/api/sale/purchase';
 				}
 
-				$this->havanao_api_key   = $this->get_option( 'havanao_api_key' );
-				$this->consumer_secret   = $this->get_option( 'consumer_secret' );
+				$this->havanao_api_key      = $this->get_option( 'havanao_api_key' );
+				$this->consumer_secret      = $this->get_option( 'consumer_secret' );
 				
-				$this->businessShortCode = $this->get_option( 'business_shortcode' );
-				$this->tillNumber        = $this->get_option( 'till_number' );
-				$this->passKey           = $this->get_option( 'passkey' );
-				$this->transactionType   = $this->get_option('transactionType','CustomerPayBillOnline');
+				$this->successPaymentStatus = $this->get_option( 'success_payment_status' );
+				$this->pendingPaymentStatus = $this->get_option( 'pending_payment_status' );
+				$this->erroredPaymentStatus = $this->get_option( 'error_payment_status' );
 				
-				$this->callBackURL       = add_query_arg( 'wc-api', 'WC_Callback_Gateway', home_url( '/' ) );
+				$this->callBackURL          = add_query_arg( 'wc-api', 'WC_Callback_Gateway', home_url( '/' ) );
 
 				// Load the settings.
 				$this->init_form_fields();
@@ -98,7 +97,7 @@ function HavanaoGateWay() {
 						'title'       => __( 'Title', 'havanao' ),
 						'type'        => 'text',
 						'description' => __( 'This controls the title which the user sees during checkout.', 'havanao' ),
-						'default'     => __( 'havanao Payments', 'havanao' ),
+						'default'     => __( 'Havanao Payments', 'havanao' ),
 						'desc_tip'    => true,
 					),
 					'description'        => array(
@@ -114,6 +113,24 @@ function HavanaoGateWay() {
 						'description' => __( 'Instructions that will be added to the thank you page and emails.', 'havanao' ),
 						'default'     => __( 'Dial *182*7# on MTN to confirm pending payment', 'havanao' ),
 						'desc_tip'    => true,
+					),
+					'success_payment_status'       => array(
+						'title'   => __( 'Successful Payment Order Status', 'havanao' ),
+						'type'    => 'select',
+						'default' => 'wc-completed',
+						'options' => wc_get_order_statuses(),
+					),
+					'pending_payment_status'       => array(
+						'title'   => __( 'Pending Payment Order Status', 'havanao' ),
+						'type'    => 'select',
+						'default' => 'wc-on-hold',
+						'options' => wc_get_order_statuses(),
+					),
+					'error_payment_status'       => array(
+						'title'   => __( 'Errored Payment Order Status', 'havanao' ),
+						'type'    => 'select',
+						'default' => 'wc-pending',
+						'options' => wc_get_order_statuses(),
 					),
 					'test_enabled'       => array(
 						'title'   => __( 'Enable/Disable Test Mode', 'havanao' ),
@@ -170,7 +187,7 @@ function HavanaoGateWay() {
 				$data = [
 					'customer'      => $phone,
 					'amount'        => (int) $order->get_total(),
-					'transactionid' => $order_id,
+					'transactionid' => implode("-", str_split(strtoupper(uniqid('TXN')), 4)). '-'.$order_id,
 					'comment'       =>  __('Payment for order number ') . $order_id,
 					'callback_url'  => add_query_arg( 'order-id', $order_id, $this->callBackURL ),
 				];
@@ -194,7 +211,7 @@ function HavanaoGateWay() {
 
 					if ( isset( $response->code ) && '200' == $response->code ) {
 						// Mark as on-hold (we're awaiting the havanao payment)
-						$order->update_status( 'on-hold', __( 'Awaiting havanao payment.', 'havanao' ) );
+						$order->update_status( $this->pendingPaymentStatus, __( 'Awaiting havanao payment.', 'havanao' ) );
 
 						// Reduce stock levels
 						wc_reduce_stock_levels( $order_id );
@@ -208,7 +225,8 @@ function HavanaoGateWay() {
 							'redirect' => $this->get_return_url( $order ),
 						);
 					} else {
-						wc_add_notice( __( 'There was an error making the payment. Please try again.', 'havanao' ), 'error' );
+						wc_add_notice( __( 'There was an error making the payment.', 'havanao' ), 'error' );
+
 						return;
 					}
 				} else {
@@ -216,7 +234,8 @@ function HavanaoGateWay() {
 					// Add error to the note
 					$order->add_order_note($response->get_error_message(),'error');
 					wc_add_notice( __( 'There was an error making the payment. Please try again.', 'havanao' ), 'error' );
-					return;
+					$order->update_status( $this->erroredPaymentStatus, __( 'There was an error making the payment.', 'havanao' ) );
+					// return;
 				}
 
 
@@ -241,15 +260,18 @@ function HavanaoGateWay() {
 				
 				$order         = wc_get_order( $_REQUEST['order-id'] );
 				
-			
-			        $order->add_order_note( $this->generateTable($responseArray['Body']['stkCallback']) );
+			    $order->add_order_note( $this->generateTable($responseArray['Body']['stkCallback']) );
 
-				if ( isset( $jsonResponse->Body->stkCallback->ResultCode ) && '0' == $jsonResponse->Body->stkCallback->ResultCode ) {
-					// $order_id = $_REQUEST['order-id'];
-					// $order    = wc_get_order( $order_id );
+				if ( isset( $jsonResponse->transactionStatus ) && 'APPROVED' == $jsonResponse->transactionStatus ) {
+
 					if ( $order ) {
 						$order->add_order_note( __( 'havanao payment completed.', 'havanao' ),'success' );
-						$order->payment_complete();
+						// Complete this order, otherwise set it to another status as per configurations
+						if ($this->successPaymentStatus == 'wc-completed') {
+							$order->payment_complete();
+						} else {
+							$order->update_status( $this->successPaymentStatus, __( 'Payment was Successful.', 'havanao' ) );
+						}
 					}
 				}
 			}
