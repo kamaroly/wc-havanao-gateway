@@ -11,5 +11,15 @@ You can set this plugin to testing if you are not in production.
 
 
 #### CHANGELOG
-1.0.1
+##### 2020-07-26 
+###### 1.0.2
+- Added below settings under `Woocommerce > Settings > Payments > Havanao` 
+	- Added success payment status configuration
+	- Added pending payment status configurations 
+- Added Havanao Payment status call back handler
+- Removed Havanao Bill Number label
+- Removed Unnecessary Files in plugin.
+
+##### 2020-07-24 
+###### 1.0.1
 - Fixed MTN bug of `soap:ClientThe requested operation was rejected. Please consult with your administrator.Your support ID is: 13025149561602501851`
