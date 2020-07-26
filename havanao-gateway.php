@@ -3,7 +3,7 @@
  * Plugin Name:     WooCommerce Havanao Payment Gateway
  * Plugin URI:      https://havanao.com
  * Description:     Handle payments to havanao, Lambert contributed to have this working in production.
- * Version:         1.0.1
+ * Version:         1.0.2
  * Author:          support@havanao.com
  * Author URI:      https://havanao.com
  * Text Domain:     havanao
@@ -55,9 +55,9 @@ function HavanaoGateWay() {
 				$this->havanao_api_key      = $this->get_option( 'havanao_api_key' );
 				$this->consumer_secret      = $this->get_option( 'consumer_secret' );
 				
-				$this->successPaymentStatus = $this->get_option( 'success_payment_status' );
-				$this->pendingPaymentStatus = $this->get_option( 'pending_payment_status' );
-				$this->erroredPaymentStatus = $this->get_option( 'error_payment_status' );
+				$this->successPaymentStatus = trim($this->get_option( 'success_payment_status' ),'wc-');
+				$this->pendingPaymentStatus = trim($this->get_option( 'pending_payment_status' ),'wc-');
+				$this->erroredPaymentStatus = trim($this->get_option( 'error_payment_status' ),'wc-');
 				
 				$this->callBackURL          = add_query_arg( 'wc-api', 'WC_Callback_Gateway', home_url( '/' ) );
 
@@ -200,8 +200,12 @@ function HavanaoGateWay() {
 					$this->gateway_url, 
 					['body'    => json_encode( $data ),'timeout' => 45 ]
 				);
-				$order->add_order_note(json_encode( $data ));
-				$order->add_order_note($this->gateway_url);
+			  	
+			   // ONLY LOG ON TEST ENABLED
+			   if( 'yes' == $this->get_option( 'test_enabled' ) ) {
+					$order->add_order_note(json_encode( $data ));
+					$order->add_order_note($this->gateway_url);
+				}
 				// Log request and response to havanao
 				if ( ! is_wp_error( $response ) ) {
 					
@@ -230,9 +234,13 @@ function HavanaoGateWay() {
 						return;
 					}
 				} else {
-					$order->add_order_note($this->gateway_url);
-					// Add error to the note
-					$order->add_order_note($response->get_error_message(),'error');
+				    // Only Log when test mode is enabled
+				    if( 'yes' == $this->get_option( 'test_enabled' ) ) {
+				    	$order->add_order_note($this->gateway_url);
+						// Add error to the note
+						$order->add_order_note($response->get_error_message(),'error');
+				    }
+					
 					wc_add_notice( __( 'There was an error making the payment. Please try again.', 'havanao' ), 'error' );
 					$order->update_status( $this->erroredPaymentStatus, __( 'There was an error making the payment.', 'havanao' ) );
 					// return;
@@ -260,18 +268,19 @@ function HavanaoGateWay() {
 				
 				$order         = wc_get_order( $_REQUEST['order-id'] );
 				
-			    $order->add_order_note( $this->generateTable($responseArray['Body']['stkCallback']) );
+			    $order->add_order_note( $this->generateTable($responseArray),'success' );
+			    // Only Log when test mode is enabled
+			    if( 'yes' == $this->get_option( 'test_enabled' ) ) {
+			    	$order->add_order_note( $response );
+			    }
+			    
 
 				if ( isset( $jsonResponse->transactionStatus ) && 'APPROVED' == $jsonResponse->transactionStatus ) {
 
 					if ( $order ) {
-						$order->add_order_note( __( 'havanao payment completed.', 'havanao' ),'success' );
 						// Complete this order, otherwise set it to another status as per configurations
-						if ($this->successPaymentStatus == 'wc-completed') {
-							$order->payment_complete();
-						} else {
-							$order->update_status( $this->successPaymentStatus, __( 'Payment was Successful.', 'havanao' ) );
-						}
+						$order->payment_complete();
+						$order->update_status( $this->get_option( 'success_payment_status' ), __( 'Havano Payment was Successful.', 'havanao' ) );	
 					}
 				}
 			}
@@ -327,9 +336,9 @@ function HavanaoGateWay() {
 			public function generateTable($myTableArrayBody) {
 			    $x = 0;
 			    $y = 0;
-			    $seTableStr = '<table><tbody>';			    
+			    $seTableStr = '<table><caption><h3>HAVANAO PAYMENT DETAILS</h3></caption><tbody>';		    
 			    foreach ($myTableArrayBody as $key => $value) {
-			    	$seTableStr = $seTableStr.'<tr><th>'.$key.'</th></tr><tr><td>'.$value.'</td><tr>';
+			    	$seTableStr = $seTableStr.'<tr><th>'.strtoupper($key).'</th><td>'.$value.'</td></tr>';
 			    }
 			    $seTableStr .= '</tbody></table>';
 			    return $seTableStr;
