@@ -54,11 +54,7 @@ function HavanaoGateWay() {
 
 				$this->havanao_api_key      = $this->get_option( 'havanao_api_key' );
 				$this->consumer_secret      = $this->get_option( 'consumer_secret' );
-				
-				$this->successPaymentStatus = trim($this->get_option( 'success_payment_status' ),'wc-');
-				$this->pendingPaymentStatus = trim($this->get_option( 'pending_payment_status' ),'wc-');
-				$this->erroredPaymentStatus = trim($this->get_option( 'error_payment_status' ),'wc-');
-				
+								
 				$this->callBackURL          = add_query_arg( 'wc-api', 'WC_Callback_Gateway', home_url( '/' ) );
 
 				// Load the settings.
@@ -126,7 +122,7 @@ function HavanaoGateWay() {
 						'default' => 'wc-on-hold',
 						'options' => wc_get_order_statuses(),
 					),
-					'error_payment_status'       => array(
+					'errored_payment_status'       => array(
 						'title'   => __( 'Errored Payment Order Status', 'havanao' ),
 						'type'    => 'select',
 						'default' => 'wc-pending',
@@ -215,7 +211,7 @@ function HavanaoGateWay() {
 
 					if ( isset( $response->code ) && '200' == $response->code ) {
 						// Mark as on-hold (we're awaiting the havanao payment)
-						$order->update_status( $this->pendingPaymentStatus, __( 'Awaiting havanao payment.', 'havanao' ) );
+						$order->update_status( $this->get_option( 'pending_payment_status' ), __( 'Awaiting havanao payment.', 'havanao' ) );
 
 						// Reduce stock levels
 						wc_reduce_stock_levels( $order_id );
@@ -242,7 +238,7 @@ function HavanaoGateWay() {
 				    }
 					
 					wc_add_notice( __( 'There was an error making the payment. Please try again.', 'havanao' ), 'error' );
-					$order->update_status( $this->erroredPaymentStatus, __( 'There was an error making the payment.', 'havanao' ) );
+					$order->update_status( $this->get_option( 'errored_payment_status' ), __( 'There was an error making the payment.', 'havanao' ) );
 					// return;
 				}
 
@@ -276,12 +272,11 @@ function HavanaoGateWay() {
 			    
 
 				if ( isset( $jsonResponse->transactionStatus ) && 'APPROVED' == $jsonResponse->transactionStatus ) {
-
-					if ( $order ) {
 						// Complete this order, otherwise set it to another status as per configurations
 						$order->payment_complete();
 						$order->update_status( $this->get_option( 'success_payment_status' ), __( 'Havano Payment was Successful.', 'havanao' ) );	
-					}
+				} else {
+					$order->update_status( $this->get_option( 'errored_payment_status' ), __( 'Havano Payment was Successful.', 'havanao' ) );	
 				}
 			}
 
