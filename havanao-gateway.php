@@ -3,7 +3,7 @@
  * Plugin Name:     WooCommerce Havanao Payment Gateway
  * Plugin URI:      https://havanao.com
  * Description:     Handle payments to havanao, Lambert contributed to have this working in production.
- * Version:         1.0.1
+ * Version:         1.0.2
  * Author:          support@havanao.com
  * Author URI:      https://havanao.com
  * Text Domain:     havanao
