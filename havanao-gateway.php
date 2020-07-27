@@ -47,7 +47,7 @@ function HavanaoGateWay() {
 
 				// Define havanao specific configuration
 				if ( 'yes' == $this->get_option( 'test_enabled' ) ) {
-					$this->gateway_url = 'https://staging.havanao.com/api/sale/purchase';
+					$this->gateway_url = 'https://api.havanao.com/api/sale/purchase';
 				} else {
 					$this->gateway_url = 'https://api.havanao.com/api/sale/purchase';
 				}
@@ -183,7 +183,7 @@ function HavanaoGateWay() {
 				$data = [
 					'customer'      => $phone,
 					'amount'        => (int) $order->get_total(),
-					'transactionid' => implode("-", str_split(strtoupper(uniqid('TXN')), 4)). '-'.$order_id,
+					'transactionid' => implode("-", str_split(strtoupper(uniqid('WCTXN')), 4)). '-'.$order_id,
 					'comment'       =>  __('Payment for order number ') . $order_id,
 					'callback_url'  => add_query_arg( 'order-id', $order_id, $this->callBackURL ),
 				];
